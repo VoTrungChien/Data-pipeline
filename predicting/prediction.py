@@ -3,8 +3,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.tri as tri
-#import matplotlib.collections
-#import matplotlib.cm as cm
+import mplcursors
+from sklearn.cluster import KMeans
 
 phase_pd = pd.read_csv("./41x41/L0_2/41x41_phase_100_DL_5e-07.csv")
 dp_pd = pd.read_csv("./41x41/L0_2/41x41_U_100_DL_5e-07.csv")
@@ -42,13 +42,37 @@ nodal_values = phase[:,20]
 elements_quads = elements
 elements_all_tris = quads_to_tris(elements_quads)
 
-values = phase[:,99]
-values_d = dp
+plt.figure(1)
 # create an unstructured triangular grid instance
 triangulation = tri.Triangulation(nodes_x, nodes_y, elements_all_tris)
 # plot the contours
 plt.tricontourf(triangulation, nodal_values)
+#plt.plot(0.2,0.3,'rs',0.6,0.8,'b^')
 # show
 plt.colorbar()
 plt.axis('equal')
+mplcursors.cursor()
+
+# K-mean Clustering
+plt.figure(2)
+K = 5
+one = np.ones_like(nodal_values)
+values = np.concatenate((nodal_values,one), axis=0)
+values = values.reshape(2,-1).T
+km = KMeans(n_clusters=K).fit(values)
+y_pred = km.predict(values)
+plt.scatter(position[:,0],position[:,1],c=y_pred, cmap='Paired')
+plt.axis('equal')
+plt.title("K-means")
+
+# DBSCAN
+plt.figure(3)
+from sklearn.cluster import DBSCAN
+dbscan = DBSCAN(eps=1.5, min_samples=2)
+clusters = dbscan.fit_predict(values)
+plt.scatter(position[:,0],position[:,1],c=clusters, marker = 'o')
+plt.axis('equal')
+plt.title("DBSCAN")
+
+
 plt.show()
