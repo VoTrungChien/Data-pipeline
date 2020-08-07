@@ -6,25 +6,6 @@ import matplotlib.tri as tri
 import matplotlib.cm as cm
 import mplcursors
 from sklearn.cluster import KMeans
-from sklearn.cluster import AgglomerativeClustering
-
-"""
-phase_pd = pd.read_csv("./41x41/L0_2/41x41_phase_100_DL_5e-07.csv")
-dp_pd = pd.read_csv("./41x41/L0_2/41x41_U_100_DL_5e-07.csv")
-position_pd = pd.read_csv("./41x41/41x41position.csv")
-element_pd = pd.read_csv("./41x41/41x41element.csv")
-"""
-phase_pd = pd.read_csv("./71x71/L0_2/71x71_phase_100_DL_5e-07.csv")
-dp_pd = pd.read_csv("./71x71/L0_2/71x71_U_100_DL_5e-07.csv")
-position_pd = pd.read_csv("./71x71/71x71position.csv")
-element_pd = pd.read_csv("./71x71/71x71element.csv")
-
-element = np.array(element_pd)
-position = np.array(position_pd)
-phase = np.array(phase_pd)
-dp = np.array(dp_pd)
-elements = element-1
-nodes = position
 
 # converts quad elements into tri elements
 def quads_to_tris(quads):
@@ -45,10 +26,11 @@ def quads_to_tris(quads):
 
 m = np.array([61,71])
 n = np.array([2,4,6,8])
-step = [61,70,99]
+step = [61,67,71,99]
 u = [2.95e-5,3.35e-5,3.58e-5,4.15e-5]
+
 for i in range(len(m)):
-    j=3
+    j=0
     plt.figure(i)
     phase_pd = pd.read_csv("./{0}x{0}/L0_{1}/{0}x{0}_phase_100_DL_5e-07.csv".format(m[i],n[j]))
     dp_pd = pd.read_csv("./{0}x{0}/L0_{1}/{0}x{0}_U_100_DL_5e-07.csv".format(m[i],n[j]))
@@ -67,40 +49,24 @@ for i in range(len(m)):
         nodal_values = phase[:,step[k]]
         elements_quads = elements
         elements_all_tris = quads_to_tris(elements_quads)
-        plt.suptitle('mesh size {0}x{0}'.format(m[i]-1), fontsize=12)
-        plt.subplot(3,3,3*k+1)
         triangulation = tri.Triangulation(nodes_x, nodes_y, elements_all_tris)
+        #plt.tricontour(triangulation, nodal_values,cmap='jet')
         levels = np.arange(0, 1.01, 0.005)
         cmap = cm.get_cmap(name='jet', lut=None)
+        number='14{0}'.format(k+1)
+        plt.subplot(number)
+        plt.suptitle('mesh size {0}x{0}'.format(m[i]-1), fontsize=12)
         plt.tricontourf(triangulation, nodal_values,levels=levels,cmap=cmap)
-        plt.colorbar()
+        #plt.colorbar()
+        plt.xlabel('u={0}mm & step ${1}th$'.format(u[k],step[k]), fontsize=12)
+        #plt.ylabel('ylabel{0}'.format(j), fontsize=8)
+        #plt.rcParams['font.family']='cursive'
+        plt.rcParams['font.size']='8'
+        #plt.tight_layout(pad=1)
         plt.axis('equal')
-        if k==0:
-            plt.title("crack propagation",fontsize=10)
         plt.xlim([-0.1, 1.1])
         plt.ylim([-0.1,1.1])
         mplcursors.cursor()
-        # K-mean Clustering
-        plt.subplot(3,3,3*k+2)
-        K = 10
-        one = np.ones_like(nodal_values)
-        values = np.concatenate((nodal_values,one), axis=0)
-        values = values.reshape(2,-1).T
-        km = KMeans(n_clusters=K).fit(values)
-        y_pred = km.predict(values)
-        plt.scatter(position[:,0],position[:,1],c=y_pred, cmap='Wistia', marker='s')
-        plt.axis('equal')
-        if k==0:
-            plt.title("K-means",fontsize=10)
-        plt.colorbar()
-        # Agglomerative clustering
-        plt.subplot(3,3,3*k+3)
-        agg = AgglomerativeClustering(n_clusters=K)
-        y_pred = agg.fit_predict(values)
-        plt.scatter(position[:,0],position[:,1],c=y_pred, cmap='winter',marker=',')
-        plt.axis('equal')
-        if k==0:
-            plt.title("Agglomerative",fontsize=10)
-        plt.colorbar()
 
 plt.show()
+

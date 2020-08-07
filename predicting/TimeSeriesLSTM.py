@@ -9,35 +9,32 @@ from keras.layers import Dense
 from keras.layers import LSTM
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
-# convert an array of values into a dataset matrix
-def create_dataset(dataset, look_back=1):
-	dataX, dataY = [], []
-	for i in range(len(dataset)-look_back-1):
-		a = dataset[i:(i+look_back), 0]
-		dataX.append(a)
-		dataY.append(dataset[i + look_back, 0])
-	return numpy.array(dataX), numpy.array(dataY)
-# fix random seed for reproducibility
-numpy.random.seed(7)
-# load the dataset
-dataframe = read_csv("./41x41/L0_2/41x41_phase_100_DL_5e-07.csv")
-pos_pd = read_csv("./41x41/41x41position.csv")
-pos = pos_pd.values
-p=[i for i in range(len(pos)) if (pos[i]==[0.5,0.5]).all()]
-print(p)
-dataset = dataframe.values[p,:].reshape(-1,1)
-dataset = dataset.astype('float32')
-# normalize the dataset
-scaler = MinMaxScaler(feature_range=(0, 1))
-dataset = scaler.fit_transform(dataset)
+
+m=np.array([41,51,61,71])
+n=np.array([2,4,6,8])
+s=0
+t=3
+point=np.array([0.5,0.5])
+phase_pd_60 = read_csv("./{0}x{0}/L0_{1}/{0}x{0}_phase_100_DL_5e-07.csv".format(m[s],n[t]))
+pos_pd_60 = read_csv("./{0}x{0}/{0}x{0}position.csv".format(m[s]))
+pos_60 = pos_pd_60.values
+p=[i for i in range(len(pos_60)) if (pos_60[i]==[point[0],point[1]]).all()]
+phase_60 = phase_pd_60.values[p,:].reshape(-1,1)
+phase_60 = phase_60.astype('float32')
+
+s=3
+phase_pd_70 = read_csv("./{0}x{0}/L0_{1}/{0}x{0}_phase_100_DL_5e-07.csv".format(m[s],n[t]))
+pos_pd_70 = read_csv("./{0}x{0}/{0}x{0}position.csv".format(m[s]))
+pos_70 = pos_pd_70.values
+p=[i for i in range(len(pos_70)) if (pos_70[i]==[point[0],point[1]]).all()]
+phase_70 = phase_pd_70.values[p,:].reshape(-1,1)
+phase_70 = phase_70.astype('float32')
 # split into train and test sets
-train_size = int(len(dataset) * 0.67)
-test_size = len(dataset) - train_size
-train, test = dataset[0:train_size,:], dataset[train_size:len(dataset),:]
-# reshape into X=t and Y=t+1
+train_size = int(len(phase_60) * 0.60)
+test_size = len(phase_60) - train_size
+trainX, testX = phase_60[0:train_size,:], phase_60[train_size:len(phase_60),:]
+trainY, testY = phase_70[0:train_size,:], phase_60[train_size:len(phase_60),:]
 look_back = 1
-trainX, trainY = create_dataset(train, look_back)
-testX, testY = create_dataset(test, look_back)
 # reshape input to be [samples, time steps, features]
 trainX = numpy.reshape(trainX, (trainX.shape[0], 1, trainX.shape[1]))
 testX = numpy.reshape(testX, (testX.shape[0], 1, testX.shape[1]))
@@ -50,26 +47,19 @@ model.fit(trainX, trainY, epochs=100, batch_size=1, verbose=2)
 # make predictions
 trainPredict = model.predict(trainX)
 testPredict = model.predict(testX)
-# invert predictions
-trainPredict = scaler.inverse_transform(trainPredict)
-trainY = scaler.inverse_transform([trainY])
-testPredict = scaler.inverse_transform(testPredict)
-testY = scaler.inverse_transform([testY])
-# calculate root mean squared error
-trainScore = math.sqrt(mean_squared_error(trainY[0], trainPredict[:,0]))
+trainScore = math.sqrt(mean_squared_error(trainY[:,0], trainPredict[:,0]))
 print('Train Score: %.2f RMSE' % (trainScore))
-testScore = math.sqrt(mean_squared_error(testY[0], testPredict[:,0]))
+testScore = math.sqrt(mean_squared_error(testY[:,0], testPredict[:,0]))
 print('Test Score: %.2f RMSE' % (testScore))
-# shift train predictions for plotting
-trainPredictPlot = numpy.empty_like(dataset)
+trainPredictPlot = numpy.empty_like(phase_60)
 trainPredictPlot[:, :] = numpy.nan
-trainPredictPlot[look_back:len(trainPredict)+look_back, :] = trainPredict
-# shift test predictions for plotting
-testPredictPlot = numpy.empty_like(dataset)
+trainPredictPlot[0:len(trainPredict)] = trainPredict
+testPredictPlot = numpy.empty_like(phase_60)
 testPredictPlot[:, :] = numpy.nan
-testPredictPlot[len(trainPredict)+(look_back*2)+1:len(dataset)-1, :] = testPredict
-# plot baseline and predictions
-plt.plot(scaler.inverse_transform(dataset))
+testPredictPlot[len(trainPredict):len(phase_60)] = testPredict
+plt.plot(phase_70,label='70')
 plt.plot(trainPredictPlot)
 plt.plot(testPredictPlot)
+plt.plot(phase_60,label='60')
+plt.legend()
 plt.show()

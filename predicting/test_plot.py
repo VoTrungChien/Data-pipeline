@@ -18,7 +18,7 @@ p = np.array([i for i in range(len(position)) if (position[i]==[0.5,0.5]).all()]
 point = np.concatenate((phase[p+int(node[0,0])].reshape(-1,1),phase[p+int(node[0,1])].reshape(-1,1),phase[p+int(node[0,2])].reshape(-1,1),phase[p+int(node[0,3])].reshape(-1,1),phase[p+int(node[0,4])].reshape(-1,1)),axis=1)
 point = np.array(point)
 
-i=80
+i=70
 
 #the B-spline representation of a 1-D curve
 import matplotlib.pyplot as plt
@@ -36,6 +36,7 @@ f = interpolate.interp1d(node[0,:], point[i,:])
 f1 = interpolate.BarycentricInterpolator(node[0,:], point[i,:])
 xnew = np.arange(node[0,0], node[0,4], 0.1)
 ynew = f(xnew)
+plt.figure(2)
 plt.axis([0,20.1,0,1.1])
 plt.plot(node[0,:],point[i,:], 'o', xnew, ynew, '-')
 
@@ -43,6 +44,7 @@ plt.plot(node[0,:],point[i,:], 'o', xnew, ynew, '-')
 from scipy.interpolate import pchip_interpolate
 x = np.linspace(node[0,0], node[0,4], num=100)
 y = pchip_interpolate(node[0,:], point[i,:], x)
+plt.figure(1)
 plt.plot(node[0,:], point[i,:], "o", label="observation")
 plt.plot(x, y, label="pchip interpolation")
 plt.legend()
